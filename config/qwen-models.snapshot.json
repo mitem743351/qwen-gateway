@@ -1,0 +1,153 @@
+{
+  "generated_at": "2026-08-25T10:50:00Z",
+  "source": "Research.md §16, live discovery via GET /api/v2/models/ and /settings/model",
+  "models": [
+    {
+      "model_id": "qwen3.7-plus",
+      "display_name": "Qwen3.7-Plus",
+      "context_window": 1000000,
+      "max_input_tokens": null,
+      "max_output_tokens": 65536,
+      "supports_streaming": true,
+      "supports_non_streaming": false,
+      "supports_tools": true,
+      "supports_mcp": true,
+      "supports_plugins": false,
+      "supports_vision": true,
+      "supports_files": true,
+      "supports_image_generation": true,
+      "supports_audio": true,
+      "supports_reasoning": true,
+      "supports_structured_output": false,
+      "supports_web_search": true,
+      "evidence": [
+        "DIRECT: Observed in UI model selector and /settings/model accordion (2026-08-25T10:32:00Z)",
+        "NETWORK: Returned by GET /api/v2/models/ with max_context_length=1000000, max_summary_generation_length=65536 (2026-08-25T10:35:45Z)",
+        "NETWORK: Verified runtime streaming completion via POST /api/v2/chat/completions with thinking_summary and answer phases (2026-08-25T10:46:32Z)"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "model_id": "qwen3.8-max",
+      "display_name": "Qwen3.8-Max",
+      "context_window": 1000000,
+      "max_input_tokens": null,
+      "max_output_tokens": 131072,
+      "supports_streaming": true,
+      "supports_non_streaming": false,
+      "supports_tools": true,
+      "supports_mcp": true,
+      "supports_plugins": false,
+      "supports_vision": true,
+      "supports_files": true,
+      "supports_image_generation": true,
+      "supports_audio": true,
+      "supports_reasoning": true,
+      "supports_structured_output": false,
+      "supports_web_search": true,
+      "evidence": [
+        "DIRECT: Observed in UI model selector and /settings/model accordion (2026-08-25T10:32:00Z)",
+        "NETWORK: Returned by GET /api/v2/models/ with max_context_length=1000000, max_summary_generation_length=131072 (2026-08-25T10:35:45Z)",
+        "NETWORK: Verified runtime streaming completion with web search via POST /api/v2/chat/completions (2026-08-25T10:48:19Z)"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "model_id": "qwen3.7-max",
+      "display_name": "Qwen3.7-Max",
+      "context_window": 1000000,
+      "max_input_tokens": null,
+      "max_output_tokens": 65536,
+      "max_thinking_tokens": 81920,
+      "supports_streaming": true,
+      "supports_non_streaming": false,
+      "supports_tools": true,
+      "supports_mcp": true,
+      "supports_plugins": false,
+      "supports_vision": false,
+      "supports_files": true,
+      "supports_image_generation": true,
+      "supports_audio": false,
+      "supports_reasoning": true,
+      "supports_structured_output": false,
+      "supports_web_search": true,
+      "evidence": [
+        "DIRECT: Observed in /settings/model accordion with text-only modality specification (2026-08-25T10:41:22Z)",
+        "NETWORK: Returned by GET /api/v2/models/ with max_context_length=1000000, max_summary_generation_length=65536, max_thinking_generation_length=81920, modality=['text'] (2026-08-25T10:35:45Z)"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "model_id": "qwen3.6-plus",
+      "display_name": "Qwen3.6-Plus",
+      "context_window": 1000000,
+      "max_input_tokens": null,
+      "max_output_tokens": 65536,
+      "supports_streaming": true,
+      "supports_non_streaming": false,
+      "supports_tools": true,
+      "supports_mcp": true,
+      "supports_plugins": false,
+      "supports_vision": true,
+      "supports_files": true,
+      "supports_image_generation": true,
+      "supports_audio": true,
+      "supports_reasoning": true,
+      "supports_structured_output": false,
+      "supports_web_search": true,
+      "evidence": [
+        "DIRECT: Observed in /settings/model accordion (2026-08-25T10:41:22Z)",
+        "NETWORK: Returned by GET /api/v2/models/ with max_context_length=1000000, max_summary_generation_length=65536 (2026-08-25T10:35:45Z)"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "model_id": "qwen3.5-plus",
+      "display_name": "Qwen3.5-Plus",
+      "context_window": 1000000,
+      "max_input_tokens": null,
+      "max_output_tokens": 65536,
+      "supports_streaming": true,
+      "supports_non_streaming": false,
+      "supports_tools": true,
+      "supports_mcp": true,
+      "supports_plugins": false,
+      "supports_vision": true,
+      "supports_files": true,
+      "supports_image_generation": true,
+      "supports_audio": true,
+      "supports_reasoning": true,
+      "supports_structured_output": false,
+      "supports_web_search": true,
+      "evidence": [
+        "DIRECT: Observed in /settings/model accordion (2026-08-25T10:41:22Z)",
+        "NETWORK: Returned by GET /api/v2/models/ with max_context_length=1000000, max_summary_generation_length=65536 (2026-08-25T10:35:45Z)"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "model_id": "qwen3.5-omni-plus",
+      "display_name": "Qwen3.5-Omni-Plus",
+      "context_window": 262144,
+      "max_input_tokens": null,
+      "max_output_tokens": 65536,
+      "supports_streaming": true,
+      "supports_non_streaming": false,
+      "supports_tools": false,
+      "supports_mcp": false,
+      "supports_plugins": false,
+      "supports_vision": true,
+      "supports_files": true,
+      "supports_image_generation": true,
+      "supports_audio": true,
+      "supports_reasoning": false,
+      "supports_structured_output": false,
+      "supports_web_search": true,
+      "evidence": [
+        "DIRECT: Observed in /settings/model accordion with text, image, video, audio modality (2026-08-25T10:41:22Z)",
+        "NETWORK: Returned by GET /api/v2/models/ with max_context_length=262144, max_generation_length=65536, thinking=false, modality=['text','image','video','audio'] (2026-08-25T10:35:45Z)"
+      ],
+      "confidence": "confirmed"
+    }
+  ]
+}
