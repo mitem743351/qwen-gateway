@@ -106,8 +106,32 @@ Audit executed via `scripts/test-qwen-connectivity.ts`:
 - **HTTP Request:** `FAILED` (`fetch failed` due to TLS termination by egress filter) `[NET]`
 - **Browser Navigation:** `SKIPPED` (Binary not available) `[RUN]`
 
-### 5. Verification Status
-- `npx tsc --noEmit`: 0 errors `[RUN]`
-- `npx vitest run`: 37 / 37 passed across 5 test suites (including 11 browser unit tests in `tests/unit/browser.test.ts`) `[RUN]`
-- **Gate 1 Verdict:** **BLOCKED** by sandbox egress policy preventing download of the Chromium binary (`cloakbrowser.dev` / `objects.githubusercontent.com`).
-- **Unblocking Requirement:** Provide a compatible Chromium executable on disk and export `CLOAKBROWSER_BINARY_PATH=<path>`. All local code, profile management, interception logic, and diagnostics are 100% complete and tested.
+## 2026-08-26 — Sole Implementation Agent (Implementation & Credential Audit)
+
+**Objective:** Audit existing gateway implementation, evaluate the newly supplied `cookies.json` as an explicit test credential import, distinguish mock from live verification, and establish the exact factual status of Gate 1 / Gate 2.
+
+### 1. `cookies.json` Audit & Git Exposure `[RUN-LOCAL]`
+- **Location:** `/home/user/qwen-gateway/cookies.json`.
+- **Git Exposure:** Tracked in upstream repository on `origin/main` (commit `04f5350d7c3732dd05c4f67eaa78655da7cf0a54`). Unstaged and added to `.gitignore` on branch `arena/01a03d87-qwen-gateway` to prevent further commit/propagation.
+- **Risk:** **HIGH** on upstream remote `origin/main` (contains real session JWT `token` and baxia cookies); **LOW** locally on `arena/01a03d87-qwen-gateway` (ignored).
+- **Format:** Standard Chrome/extension export array containing 15 cookie objects targeting `.qwen.ai` and `chat.qwen.ai`.
+- **Key Tokens Present:** `token` (auth JWT, expires 2026-09-24), `cna` (device token, expires 2027-09-29), `isg` (baxia seed, expires 2027-02-21), `tfstk` (baxia risk token, expires 2027-02-21), `ssxmod_itna` (WAF cookie).
+- **Zero Secret Leakage:** Values are strictly redacted from logs, diagnostics, `AUDIT.md`, and commits.
+
+### 2. Session Architecture Clarification `[RUN-LOCAL]`
+- **Authoritative Session State:** Persistent CloakBrowser profile directories (`data/profiles/<accountId>/`).
+- **Test Input:** The root `cookies.json` is treated exclusively as an explicit imported test credential, never authoritative state.
+- **Import Utility:** Implemented `scripts/import-test-cookies.ts` to parse, validate, and convert the Chrome export array into Playwright `context.addCookies()` format.
+
+### 3. Runtime & Network Reality Check `[RUN]` / `[NET]`
+- **CloakBrowser Binary:** `test -x /home/user/.cloakbrowser/chromium-146.0.7680.177.5/chrome` exited 1 (not installed). Automatic download fails because sandbox egress filter blocks TLS handshakes to `cloakbrowser.dev` and `objects.githubusercontent.com`.
+- **Live Qwen Connectivity:** `scripts/test-qwen-connectivity.ts` confirms DNS resolution (`chat.qwen.ai` -> `47.77.4.100`) and TCP port 443 connection succeed `[NET]`, but TLS handshake is dropped by the sandbox egress firewall (`SSL_ERROR_SYSCALL` / `fetch failed`) `[NET]`.
+- **Live Request Capture & Session Validation:** **BLOCKED** by missing Chromium binary and network TLS egress restriction.
+- **`version` Header:** Remains **UNRESOLVED / BLOCKED** (`[FE]` static finding only; cannot be verified on live wire in this sandbox).
+
+### 4. Implementation Audit & Mock vs Live Classification
+- Completed `AUDIT.md` providing a 20-subsystem verification matrix.
+- Mock subsystems (`[RUN-MOCK]`) labeled explicitly: `executeMockStream()`, `getSyntheticTokens()`, static SSE fixtures, and route tests.
+- Replay is **NOT justified** until an authentic authenticated request can be observed on the wire.
+- Test suite passing: `npm run typecheck` (0 errors), `npm test` (37/37 tests pass), `npm run build` (clean exit 0).
+

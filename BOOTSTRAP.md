@@ -106,3 +106,16 @@ Executed via `scripts/test-qwen-connectivity.ts`:
 ## 4. Gate Verdict
 **Gate 1 Verdict:** **BLOCKED**  
 All local wrapper code, profile management, interception logic, header redaction, test suites, and diagnostic scripts are fully implemented and verified. Execution is blocked solely by the sandbox egress policy preventing automated download of the Chromium binary.
+
+---
+
+## 5. Test Credential Audit (`cookies.json`)
+
+- **Role & Architecture:** Explicit test credential import ONLY. The long-term authoritative session state remains the persistent browser profile directory (`data/profiles/<id>/`).
+- **File Status:** Located at workspace root (`cookies.json`).
+- **Format:** Chrome/extension JSON array with 15 cookie entries.
+- **Domains Targeted:** `.qwen.ai`, `chat.qwen.ai`.
+- **Key Tokens Present:** `token` (auth JWT, expires 2026-09-24), `cna`, `isg`, `tfstk`, `ssxmod_itna`.
+- **Git Exposure:** Tracked in upstream repository commit `04f5350` (`origin/main`). Unstaged and ignored on `arena/01a03d87-qwen-gateway` via `.gitignore`.
+- **Import Utility:** `scripts/import-test-cookies.ts` safely parses schema and maps to Playwright without printing sensitive values.
+

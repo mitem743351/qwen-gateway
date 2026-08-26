@@ -3,6 +3,11 @@
  *
  * Manages persistent profile cookies and validates sessions using
  * GET /api/v1/auths/ and POST /api/v2/users/status.
+ *
+ * Session Architecture Model:
+ *   1. Persistent browser profile (data/profiles/<id>/) = authoritative browser/session state.
+ *   2. cookies.json in profile dir = cached session/diagnostic metadata.
+ *   3. Root cookies.json = explicitly supplied test credential import ONLY, never authoritative.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
