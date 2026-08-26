@@ -109,13 +109,13 @@ All local wrapper code, profile management, interception logic, header redaction
 
 ---
 
-## 5. Test Credential Audit (`cookies.json`)
+## 5. Security Incident Remediation & Credential Policy (`cookies.json`)
 
-- **Role & Architecture:** Explicit test credential import ONLY. The long-term authoritative session state remains the persistent browser profile directory (`data/profiles/<id>/`).
-- **File Status:** Located at workspace root (`cookies.json`).
-- **Format:** Chrome/extension JSON array with 15 cookie entries.
-- **Domains Targeted:** `.qwen.ai`, `chat.qwen.ai`.
-- **Key Tokens Present:** `token` (auth JWT, expires 2026-09-24), `cna`, `isg`, `tfstk`, `ssxmod_itna`.
-- **Git Exposure:** Tracked in upstream repository commit `04f5350` (`origin/main`). Unstaged and ignored on `arena/01a03d87-qwen-gateway` via `.gitignore`.
-- **Import Utility:** `scripts/import-test-cookies.ts` safely parses schema and maps to Playwright without printing sensitive values.
+- **Incident Discovery:** `cookies.json` containing live session tokens was committed upstream to `origin/main` in commits `04f5350` and `3841e00`.
+- **Compromise Status:** Credentials marked **COMPROMISED**. They will never be transmitted to Qwen again.
+- **Git Remediation:** Rewrote Git history using `git-filter-repo --invert-paths --path cookies.json --force`. Verified `cookies.json` is completely absent from all commit history (`git log --all -- cookies.json` returns empty).
+- **Workspace Cleanup:** Local `cookies.json` deleted from workspace.
+- **`.gitignore` Hardening:** Broadened `.gitignore` to match `cookies.json`, `*.cookies*`, and `*cookie*.json`.
+- **Revocation Status:** Programmatic revocation from within the sandbox is **BLOCKED BY NETWORK** (firewall drops TLS to `chat.qwen.ai`). The operator must manually invalidate the session via Qwen account settings.
+- **Replacement Policy:** Any future test credentials must remain strictly external, untracked, and ignored.
 

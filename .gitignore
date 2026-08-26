@@ -4,4 +4,7 @@ data/
 *.log
 .env
 .env.local
+.env.*
 cookies.json
+*.cookies*
+*cookie*.json
