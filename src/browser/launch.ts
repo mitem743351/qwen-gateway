@@ -2,13 +2,21 @@
  * src/browser/launch.ts
  *
  * CloakBrowser launcher wrapper supporting singleton management,
- * custom binary path overrides, headless toggles, and proxy configuration.
+ * custom binary path overrides, headless toggles, persistent context launching,
+ * and safe diagnostic inspection without leaking sensitive values.
  */
 
-import { launch, launchPersistentContext } from 'cloakbrowser';
-import type { LaunchPersistentContextOptions } from 'cloakbrowser';
+import {
+  launch,
+  launchPersistentContext,
+  binaryInfo,
+  CHROMIUM_VERSION,
+  type LaunchOptions as CloakLaunchOptions,
+  type LaunchPersistentContextOptions,
+} from 'cloakbrowser';
 import type { Browser, BrowserContext } from 'playwright-core';
 import { resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 
 export interface BrowserConfig {
   headless?: boolean;
@@ -18,15 +26,66 @@ export interface BrowserConfig {
   userDataDir?: string;
 }
 
+export interface BrowserDiagnosticInfo {
+  packageVersion: string;
+  expectedChromiumVersion: string;
+  effectiveExecutablePath: string;
+  isExecutablePresent: boolean;
+  cacheDir: string;
+  defaultDownloadUrl: string;
+  headless: boolean;
+  userDataDir?: string;
+}
+
 export class BrowserLauncher {
   private static instance: BrowserLauncher | null = null;
   private browser: Browser | null = null;
+  private activeContexts = new Set<BrowserContext>();
 
   public static getInstance(): BrowserLauncher {
     if (!BrowserLauncher.instance) {
       BrowserLauncher.instance = new BrowserLauncher();
     }
     return BrowserLauncher.instance;
+  }
+
+  /**
+   * Resolves the effective executable path to use.
+   * Priority: explicit config > CLOAKBROWSER_BINARY_PATH env > cloakbrowser binaryInfo path.
+   */
+  public resolveExecutablePath(configPath?: string): string {
+    if (configPath && configPath.trim().length > 0) {
+      return resolve(configPath.trim());
+    }
+    const envPath = process.env['CLOAKBROWSER_BINARY_PATH'];
+    if (envPath && envPath.trim().length > 0) {
+      return resolve(envPath.trim());
+    }
+    const info = binaryInfo();
+    return info.binaryPath;
+  }
+
+  /**
+   * Returns diagnostic information about the browser runtime environment.
+   */
+  public getDiagnosticInfo(config: BrowserConfig = {}): BrowserDiagnosticInfo {
+    const info = binaryInfo();
+    const effectiveExecutable = this.resolveExecutablePath(config.binaryPath);
+    const headless = config.headless ?? (process.env['HEADLESS'] !== 'false');
+
+    const result: BrowserDiagnosticInfo = {
+      packageVersion: '0.5.9',
+      expectedChromiumVersion: CHROMIUM_VERSION,
+      effectiveExecutablePath: effectiveExecutable,
+      isExecutablePresent: existsSync(effectiveExecutable),
+      cacheDir: info.cacheDir,
+      defaultDownloadUrl: info.downloadUrl,
+      headless,
+    };
+    if (config.userDataDir) {
+      result.userDataDir = resolve(config.userDataDir);
+    }
+    return result;
   }
 
   /**
@@ -38,16 +97,15 @@ export class BrowserLauncher {
     }
 
     const headless = config.headless ?? (process.env['HEADLESS'] !== 'false');
-    const binaryPath =
-      config.binaryPath ?? process.env['CLOAKBROWSER_BINARY_PATH'];
+    const effectiveExecutable = this.resolveExecutablePath(config.binaryPath);
     const proxy = config.proxy ?? process.env['PROXY'];
 
     const launchOpts: Record<string, unknown> = {};
-    if (binaryPath) {
-      launchOpts['executablePath'] = binaryPath;
+    if (effectiveExecutable && existsSync(effectiveExecutable)) {
+      launchOpts['executablePath'] = effectiveExecutable;
     }
 
-    const options: Parameters<typeof launch>[0] = {
+    const options: CloakLaunchOptions = {
       headless,
     };
     if (proxy) {
@@ -57,8 +115,15 @@ export class BrowserLauncher {
       options.launchOptions = launchOpts;
     }
 
-    this.browser = await launch(options);
-    return this.browser;
+    try {
+      this.browser = await launch(options);
+      return this.browser;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `[BrowserLauncher] Failed to launch CloakBrowser (executable: ${effectiveExecutable}): ${msg}`,
+      );
+    }
   }
 
   /**
@@ -68,17 +133,16 @@ export class BrowserLauncher {
     profileDir: string,
     config: BrowserConfig = {},
   ): Promise<BrowserContext> {
+    const resolvedDir = resolve(profileDir);
     const headless = config.headless ?? (process.env['HEADLESS'] !== 'false');
-    const binaryPath =
-      config.binaryPath ?? process.env['CLOAKBROWSER_BINARY_PATH'];
+    const effectiveExecutable = this.resolveExecutablePath(config.binaryPath);
     const proxy = config.proxy ?? process.env['PROXY'];
 
     const launchOpts: Record<string, unknown> = {};
-    if (binaryPath) {
-      launchOpts['executablePath'] = binaryPath;
+    if (effectiveExecutable && existsSync(effectiveExecutable)) {
+      launchOpts['executablePath'] = effectiveExecutable;
     }
 
-    const resolvedDir = resolve(profileDir);
     const options: LaunchPersistentContextOptions = {
       userDataDir: resolvedDir,
       headless,
@@ -90,12 +154,37 @@ export class BrowserLauncher {
       options.launchOptions = launchOpts;
     }
 
-    return await launchPersistentContext(options);
+    try {
+      const context = await launchPersistentContext(options);
+      this.activeContexts.add(context);
+      return context;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `[BrowserLauncher] Failed to launch persistent context in ${resolvedDir}: ${msg}`,
+      );
+    }
   }
 
+  /**
+   * Closes all active contexts and the singleton browser.
+   */
   public async close(): Promise<void> {
+    for (const ctx of this.activeContexts) {
+      try {
+        await ctx.close();
+      } catch {
+        // Ignore closing errors
+      }
+    }
+    this.activeContexts.clear();
+
     if (this.browser) {
-      await this.browser.close();
+      try {
+        await this.browser.close();
+      } catch {
+        // Ignore closing errors
+      }
       this.browser = null;
     }
   }

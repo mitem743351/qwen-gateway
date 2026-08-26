@@ -19,7 +19,8 @@ async function addAccount(): Promise<void> {
 
   console.log(`[AddAccount] Initializing profile for account: "${label}" (ID: ${accountId})...`);
 
-  const profileDir = ensureProfileDir(accountId);
+  const profileRes = ensureProfileDir(accountId);
+  const profileDir = profileRes.profileDir;
   const launcher = BrowserLauncher.getInstance();
   const sessionService = new SessionService();
   const pool = new DefaultAccountPool();
