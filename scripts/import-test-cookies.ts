@@ -14,6 +14,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { BrowserLauncher } from '../src/browser/launch.js';
 import { resolveProfileDir, cleanupProfileDir } from '../src/browser/profile.js';
+import { SessionService } from '../src/services/session/session-service.js';
 
 export interface RawExportCookie {
   name: string;
@@ -173,6 +174,29 @@ async function runImport(): Promise<void> {
   console.log(`  isg (baxia seed):    ${hasIsg ? 'PRESENT' : 'MISSING'}`);
   console.log(`  tfstk (baxia risk):  ${hasTfstk ? 'PRESENT' : 'MISSING'}`);
   console.log(`  ssxmod (WAF cookie): ${hasSsxmod ? 'PRESENT' : 'MISSING'}`);
+
+  // Also populate account profile cache for local session service
+  const targetAccountId = process.argv[2] || 'account_1';
+  const cookieRecord: Record<string, string> = {};
+  let tokenVal: string | undefined;
+
+  for (const c of parsedData.playwrightCookies) {
+    cookieRecord[c.name] = c.value;
+    if (c.name === 'token') {
+      tokenVal = c.value;
+    }
+  }
+
+  const sessionService = new SessionService();
+  const profileData = {
+    accountId: targetAccountId,
+    cookies: cookieRecord,
+    updatedAt: Date.now(),
+    status: 'active' as const,
+    ...(tokenVal ? { token: tokenVal } : {}),
+  };
+  sessionService.saveProfile(profileData);
+  console.log(`\n[Profile Cache] Populated session cache for account '${targetAccountId}' at data/profiles/${targetAccountId}/cookies.json`);
 
   // Test injection into CloakBrowser persistent profile if runtime exists
   const launcher = BrowserLauncher.getInstance();
